@@ -1,0 +1,12 @@
+{
+    "name": "sine_grapher",
+    "description": "Simple animation of the sine graph.",
+    "version": "1.0.0",
+    "main": "main.js",
+    "private": true,
+    "author": {
+        "name": "Michael Rehman",
+        "url": "https://github.com/michaelrehman"
+    },
+    "license": "MIT"
+}
