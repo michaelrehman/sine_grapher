@@ -16,11 +16,12 @@ export class Bar {
 
     /**
      * Grows the height property of this Bar object.
-     * @param {number} growAmount the amount to grow the height property by
+     * @param {number} framesToGrowIn the number of frames to reach nextHeight by
      */
-    grow(growAmount) {
+    grow(framesToGrowIn) {
+        const growAmount = (this.nextHeight - this.height) / framesToGrowIn;
         this.height += growAmount;
-    }
+    } // grow
 
     /**
      * Checks if the difference between height
@@ -30,6 +31,6 @@ export class Bar {
      */
     isNextHeight(threshold) {
         return Math.abs(this.height - this.nextHeight) < threshold;
-    }
+    } // isNextHeight
 
 } // Bar

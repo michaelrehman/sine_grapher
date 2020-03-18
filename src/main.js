@@ -1,19 +1,18 @@
 import { Bar } from '../models/Bar.js';
 import {
-    RADIANS, BAR_WIDTH, BAR_GAP, BAR_HEIGHT_SCALER, BAR_AMOUNT,
+    RADIANS, BAR_WIDTH, BAR_GAP, BAR_HEIGHT_SCALAR, BAR_AMOUNT,
     GROW_FRAMES, HEIGHT_THRESHOLD, FILL_COLOR, CYCLE_WIDTH
 } from './constants.js';
 
-// Javadoc comments are used to provide Intellisense for VSCode.
+// JSdoc comments are used to provide Intellisense for VSCode.
 
-// Initial setup
+// Initial setup/globals
 const canvas = document.querySelector('canvas');
 const ctx = canvas.getContext('2d');
 
 let canvasCenterX = undefined;
 let canvasCenterY = undefined;
 
-let cyclesThatCanFit = undefined;
 let bars = null;
 
 /**
@@ -58,9 +57,12 @@ const makeSinBars = (amount) => {
 };
 
 /**
- * Resizes the canvas to match the window dimensions.
+ * Handles all necessary operations when the window is resized.
+ * This includes resizing the canvas, finding the canvas center,
+ * calculating the number of cycles that can fit, abd setting
+ * the styles of the canvas.
  */
-const resize = () => {
+const init = () => {
     // canvas width
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -68,24 +70,15 @@ const resize = () => {
     canvasCenterX = canvas.width / 2;
     canvasCenterY = canvas.height / 2;
     // bar cycles
-    cyclesThatCanFit = Math.floor(canvas.width / CYCLE_WIDTH) || 1;
+    let cyclesThatCanFit = Math.floor(canvas.width / CYCLE_WIDTH) || 1;
     bars = Object.freeze(makeSinBars(BAR_AMOUNT * cyclesThatCanFit));
+    // canvas styles
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = '#aa00aa';
+    ctx.fillStyle = FILL_COLOR;
 };
 
-resize(); // inital resize
-window.addEventListener('resize', resize);
-
-/**
- * This method calls the grow
- * method for each bar object.
- * @param {number} framesToGrowIn the number of frames to reach nextHeight by
- */
-const growBars = (framesToGrowIn) => {
-    bars.forEach((bar) => {
-        const growAmount = (bar.nextHeight - bar.height) / framesToGrowIn;
-        bar.grow(growAmount);
-    });
-};
+window.addEventListener('resize', init);
 
 /**
  * Sets the Bar objects' nextHeight property.
@@ -118,8 +111,6 @@ const drawBaseLine = () => {
     ctx.beginPath();
     ctx.moveTo(start, canvasCenterY);
     ctx.lineTo(end, canvasCenterY);
-    ctx.lineWidth = 8;
-    ctx.strokeStyle = '#aa00aa';
     ctx.stroke();
 };
 
@@ -144,25 +135,25 @@ const update = () => {
         // Draw the bar onto the canvas
         const x = canvasCenterX + offset;
         const y = canvasCenterY;
-        ctx.fillStyle = FILL_COLOR;
-        ctx.fillRect(x, y, BAR_WIDTH, bar.height * BAR_HEIGHT_SCALER);
+        ctx.fillRect(x, y, BAR_WIDTH, bar.height * BAR_HEIGHT_SCALAR);
+
+        bar.grow(GROW_FRAMES); // called once per animation frame
 
         // Check for any bars that have not grown to their next height
         // within a certain threshold. This is because the values will
         // not be exact.
         if (!bar.isNextHeight(HEIGHT_THRESHOLD)) {
             allReachedNextHeight = false;
-        }
+        } // if
     });
 
     // Set the nextHeight property if all bars have reached it.
     if (allReachedNextHeight) {
         shift();
     }
-    growBars(GROW_FRAMES); // called once per animation frame
 
     requestAnimationFrame(update);
 };
 
-// start the animation
-update();
+init();
+update(); // start the animation

@@ -47,7 +47,7 @@ export const BAR_GAP = BAR_WIDTH * BAR_GAP_SCALAR;
  * The value to multiply
  * each Bar object's height by.
  */
-export const BAR_HEIGHT_SCALER = 100;
+export const BAR_HEIGHT_SCALAR = 100;
 
 /**
  * The number of frames to reach Bar.nextHeight by.
