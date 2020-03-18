@@ -1,5 +1,8 @@
-import { Bar } from './models/Bar.js';
-import { RADIANS, BAR_WIDTH, BAR_GAP, BAR_HEIGHT_SCALER, BAR_AMOUNT, GROW_FRAMES, HEIGHT_THRESHOLD, FILL_COLOR } from './constants.js';
+import { Bar } from '../models/Bar.js';
+import {
+    RADIANS, BAR_WIDTH, BAR_GAP, BAR_HEIGHT_SCALER, BAR_AMOUNT,
+    GROW_FRAMES, HEIGHT_THRESHOLD, FILL_COLOR, CYCLE_WIDTH
+} from './constants.js';
 
 // Javadoc comments are used to provide Intellisense for VSCode.
 
@@ -10,18 +13,8 @@ const ctx = canvas.getContext('2d');
 let canvasCenterX = undefined;
 let canvasCenterY = undefined;
 
-/**
- * Resizes the canvas to match the window dimensions.
- */
-const resize = () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    canvasCenterX = canvas.width / 2;
-    canvasCenterY = canvas.height / 2;
-};
-
-resize(); // inital resize
-window.addEventListener('resize', resize);
+let cyclesThatCanFit = undefined;
+let bars = null;
 
 /**
  * Creates a mapping of all values on the unit
@@ -65,10 +58,22 @@ const makeSinBars = (amount) => {
 };
 
 /**
- * The Bar objects to be drawn
- * and animated onto the canvas.
+ * Resizes the canvas to match the window dimensions.
  */
-const BARS = Object.freeze(makeSinBars(BAR_AMOUNT * 3));
+const resize = () => {
+    // canvas width
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    // canvas center
+    canvasCenterX = canvas.width / 2;
+    canvasCenterY = canvas.height / 2;
+    // bar cycles
+    cyclesThatCanFit = Math.floor(canvas.width / CYCLE_WIDTH) || 1;
+    bars = Object.freeze(makeSinBars(BAR_AMOUNT * cyclesThatCanFit));
+};
+
+resize(); // inital resize
+window.addEventListener('resize', resize);
 
 /**
  * This method calls the grow
@@ -76,8 +81,7 @@ const BARS = Object.freeze(makeSinBars(BAR_AMOUNT * 3));
  * @param {number} framesToGrowIn the number of frames to reach nextHeight by
  */
 const growBars = (framesToGrowIn) => {
-    BARS.forEach((bar) => {
-        // console.log(bar.nextHeight, bar.height, framesToGrowIn);
+    bars.forEach((bar) => {
         const growAmount = (bar.nextHeight - bar.height) / framesToGrowIn;
         bar.grow(growAmount);
     });
@@ -86,7 +90,7 @@ const growBars = (framesToGrowIn) => {
 /**
  * Sets the Bar objects' nextHeight property.
  *
- * Because BARS.indexOf(bar.height) does not work,
+ * Because bars.indexOf(bar.height) does not work,
  * this method works be setting the nextHeight value
  * of bars to the left bar's nextHeight. The leftmost
  * bar's nextHeight is set to the nextHeight value of the
@@ -97,11 +101,11 @@ const growBars = (framesToGrowIn) => {
  * This gives the illusion of the bars moving right.
  */
 const shift = () => {
-    const rightMostBarHeight = BARS[BARS.length - 1].nextHeight;
-    for (let i = BARS.length - 1; i > 0; i--) {
-        BARS[i].nextHeight = BARS[i - 1].nextHeight;
+    const rightMostBarHeight = bars[bars.length - 1].nextHeight;
+    for (let i = bars.length - 1; i > 0; i--) {
+        bars[i].nextHeight = bars[i - 1].nextHeight;
     } // for
-    BARS[0].nextHeight = rightMostBarHeight;
+    bars[0].nextHeight = rightMostBarHeight;
 };
 
 /**
@@ -109,8 +113,8 @@ const shift = () => {
  * scales with the amount of bars.
  */
 const drawBaseLine = () => {
-    const start = canvasCenterX + (0 - BARS.length / 2) * BAR_GAP;
-    const end = canvasCenterX + (BARS.length - BARS.length / 2) * BAR_GAP;
+    const start = canvasCenterX + (0 - bars.length / 2) * BAR_GAP;
+    const end = canvasCenterX + (bars.length - bars.length / 2) * BAR_GAP;
     ctx.beginPath();
     ctx.moveTo(start, canvasCenterY);
     ctx.lineTo(end, canvasCenterY);
@@ -128,17 +132,17 @@ const update = () => {
     drawBaseLine();
 
     let allReachedNextHeight = true;
-    BARS.forEach((bar, i) => {
+    bars.forEach((bar, i) => {
         // Multiply by (i - BARS.length / 2) so that each
         // new bar starts at a new location depending on its index.
         // I.e., If i is less than the middle index, it
         // moves (i - BARS.length / 2) bar gaps to the left;
         // the same applies if i is greater,
         // but it will move right instead.
-        const barGap = (i - BARS.length / 2) * BAR_GAP;
+        const offset = (i - bars.length / 2) * BAR_GAP;
 
         // Draw the bar onto the canvas
-        const x = canvasCenterX + barGap;
+        const x = canvasCenterX + offset;
         const y = canvasCenterY;
         ctx.fillStyle = FILL_COLOR;
         ctx.fillRect(x, y, BAR_WIDTH, bar.height * BAR_HEIGHT_SCALER);

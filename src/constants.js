@@ -19,27 +19,27 @@ export const RADIANS = Object.freeze([
     5 * Math.PI / 3,
     7 * Math.PI / 4,
     11 * Math.PI / 6,
-]);
+]); // length = 16
 
 /**
  * The amount of bars to draw onto the canvas.
  */
-export const BAR_AMOUNT = 16;
+export const BAR_AMOUNT = RADIANS.length;
 
 /**
  * The width of each Bar object in pixels.
  */
-export const BAR_WIDTH = 20;
+export const BAR_WIDTH = 15;
 
 /**
  * The scalar used to provide space
  * between each Bar object on the canvas.
  */
-export const BAR_GAP_SCALAR = 1.5;
+export const BAR_GAP_SCALAR = 1.4;
 
 /**
- * The amount of space between
- * each bar on the canvas.
+ * The amount of space between the
+ * leftmost side of two bars on the canvas.
  */
 export const BAR_GAP = BAR_WIDTH * BAR_GAP_SCALAR;
 
@@ -64,3 +64,8 @@ export const HEIGHT_THRESHOLD = 0.1;
  * The fill color to use for the bars.
  */
 export const FILL_COLOR = '#cccccc';
+
+/**
+ * Represents the width of RADIANS.length bar gaps.
+ */
+export const CYCLE_WIDTH = BAR_GAP * RADIANS.length;
