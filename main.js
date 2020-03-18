@@ -1,5 +1,5 @@
 import { Bar } from './models/Bar.js';
-import { RADIANS, BAR_WIDTH, BAR_GAP, BAR_HEIGHT_SCALER, BAR_AMOUNT } from './constants.js';
+import { RADIANS, BAR_WIDTH, BAR_GAP, BAR_HEIGHT_SCALER, BAR_AMOUNT, GROW_FRAMES, HEIGHT_THRESHOLD, FILL_COLOR } from './constants.js';
 
 // Javadoc comments are used to provide Intellisense for VSCode.
 
@@ -58,7 +58,8 @@ const makeSinBars = (amount) => {
         } // if
 
         const selectedSinValue = sinValues[sinTracker++];
-        bars.push(new Bar(selectedSinValue));
+        const nextSinValue = sinValues[sinTracker];
+        bars.push(new Bar(selectedSinValue, nextSinValue));
     } // for
     return bars;
 };
@@ -67,25 +68,40 @@ const makeSinBars = (amount) => {
  * The Bar objects to be drawn
  * and animated onto the canvas.
  */
-const BARS = Object.freeze(makeSinBars(BAR_AMOUNT));
+const BARS = Object.freeze(makeSinBars(BAR_AMOUNT * 3));
+
+/**
+ * This method calls the grow
+ * method for each bar object.
+ * @param {number} framesToGrowIn the number of frames to reach nextHeight by
+ */
+const growBars = (framesToGrowIn) => {
+    BARS.forEach((bar) => {
+        // console.log(bar.nextHeight, bar.height, framesToGrowIn);
+        const growAmount = (bar.nextHeight - bar.height) / framesToGrowIn;
+        bar.grow(growAmount);
+    });
+};
 
 /**
  * Sets the Bar objects' nextHeight property.
  *
  * Because BARS.indexOf(bar.height) does not work,
- * this method works be setting the height value
- * of bars to the left bar's height. The leftmost
- * bar's height is set to the height value of the
- * rightmost bar before it was modified.
+ * this method works be setting the nextHeight value
+ * of bars to the left bar's nextHeight. The leftmost
+ * bar's nextHeight is set to the nextHeight value of the
+ * rightmost bar before it was modified (this assumes
+ * that the number of bars is a multiple of the number
+ * values in RADIANS).
  *
  * This gives the illusion of the bars moving right.
  */
 const shift = () => {
-    const rightMostBarHeight = BARS[BARS.length - 1].height;
+    const rightMostBarHeight = BARS[BARS.length - 1].nextHeight;
     for (let i = BARS.length - 1; i > 0; i--) {
-        BARS[i].height = BARS[i - 1].height;
+        BARS[i].nextHeight = BARS[i - 1].nextHeight;
     } // for
-    BARS[0].height = rightMostBarHeight;
+    BARS[0].nextHeight = rightMostBarHeight;
 };
 
 /**
@@ -98,6 +114,8 @@ const drawBaseLine = () => {
     ctx.beginPath();
     ctx.moveTo(start, canvasCenterY);
     ctx.lineTo(end, canvasCenterY);
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = '#aa00aa';
     ctx.stroke();
 };
 
@@ -105,8 +123,11 @@ const drawBaseLine = () => {
  * Draws and animates elements onto the canvas.
  */
 const update = () => {
+    // Reset for new frame
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBaseLine();
+
+    let allReachedNextHeight = true;
     BARS.forEach((bar, i) => {
         // Multiply by (i - BARS.length / 2) so that each
         // new bar starts at a new location depending on its index.
@@ -115,11 +136,27 @@ const update = () => {
         // the same applies if i is greater,
         // but it will move right instead.
         const barGap = (i - BARS.length / 2) * BAR_GAP;
+
+        // Draw the bar onto the canvas
         const x = canvasCenterX + barGap;
         const y = canvasCenterY;
+        ctx.fillStyle = FILL_COLOR;
         ctx.fillRect(x, y, BAR_WIDTH, bar.height * BAR_HEIGHT_SCALER);
+
+        // Check for any bars that have not grown to their next height
+        // within a certain threshold. This is because the values will
+        // not be exact.
+        if (!bar.isNextHeight(HEIGHT_THRESHOLD)) {
+            allReachedNextHeight = false;
+        }
     });
-    shift();
+
+    // Set the nextHeight property if all bars have reached it.
+    if (allReachedNextHeight) {
+        shift();
+    }
+    growBars(GROW_FRAMES); // called once per animation frame
+
     requestAnimationFrame(update);
 };
 

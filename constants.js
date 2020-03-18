@@ -24,7 +24,7 @@ export const RADIANS = Object.freeze([
 /**
  * The amount of bars to draw onto the canvas.
  */
-export const BAR_AMOUNT = 50;
+export const BAR_AMOUNT = 16;
 
 /**
  * The width of each Bar object in pixels.
@@ -48,3 +48,19 @@ export const BAR_GAP = BAR_WIDTH * BAR_GAP_SCALAR;
  * each Bar object's height by.
  */
 export const BAR_HEIGHT_SCALER = 100;
+
+/**
+ * The number of frames to reach Bar.nextHeight by.
+ */
+export const GROW_FRAMES = 5;
+
+/**
+ * The threshold used to indicate when a Bar
+ * object's height has reached its nextHeight.
+ */
+export const HEIGHT_THRESHOLD = 0.1;
+
+/**
+ * The fill color to use for the bars.
+ */
+export const FILL_COLOR = '#cccccc';
