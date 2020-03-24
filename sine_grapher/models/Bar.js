@@ -27,7 +27,7 @@ export class Bar {
      * Checks if the difference between height
      * and nextHeight are within the threshold.
      * @param {number} threshold the maximum difference allowed
-     * @returns true if the difference is within the threshold, false otherwise
+     * @return true if the difference is within the threshold, false otherwise
      */
     isNextHeight(threshold) {
         return Math.abs(this.height - this.nextHeight) < threshold;

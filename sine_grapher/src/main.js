@@ -4,8 +4,6 @@ import {
     GROW_FRAMES, HEIGHT_THRESHOLD, FILL_COLOR, CYCLE_WIDTH
 } from './constants.js';
 
-// JSdoc comments are used to provide Intellisense for VSCode.
-
 // Initial setup/globals
 const canvas = document.querySelector('canvas');
 const ctx = canvas.getContext('2d');
@@ -32,7 +30,7 @@ const getSinValues = () => {
  * The height of each Bar objects is set according to a sine wave.
  *
  * @param {number} amount the number of bar objects to make
- * @returns an array containing Bar objects
+ * @return an array containing Bar objects
  */
 const makeSinBars = (amount) => {
     // Get sin values and declare a
