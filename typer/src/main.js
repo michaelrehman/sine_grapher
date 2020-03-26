@@ -1,5 +1,6 @@
 import { Drawer } from '../models/Drawer.js';
 import { Circle } from '../models/Circle.js';
+import { CharacterMapper } from '../models/CharacterMapper.js';
 import { COLORS, RADIUS_BOUNDS, SPEED_SCALAR, CIRCLE_AMOUNT } from './constants.js';
 
 /**
@@ -71,6 +72,7 @@ const FUNCTIONS = Object.freeze({
         } // for
         // sort circles
         circles.sort((circle1, circle2) => circle1._color > circle2._color ? -1 : 1);
+
         return circles;
     },
 
@@ -84,7 +86,6 @@ const FUNCTIONS = Object.freeze({
             canvasCenterY,
             circles: this._createCircles(CIRCLE_AMOUNT)
         }); // update properties
-
     },
 
     /**
@@ -105,7 +106,7 @@ const FUNCTIONS = Object.freeze({
         });
 
         // get next animation frame
-        // window.requestAnimationFrame(FUNCTIONS.update.bind(FUNCTIONS)); // `this` gets set to `window` normally
+        window.requestAnimationFrame(FUNCTIONS.update.bind(FUNCTIONS)); // `this` gets set to `window` normally
     }
 });
 
@@ -114,3 +115,9 @@ window.addEventListener('keydown', () => { /* TODO */ });
 
 FUNCTIONS.init();
 FUNCTIONS.update();
+
+// Test CharacterMapper
+const charVis = new CharacterMapper().getArrayFor('K');
+charVis.forEach((row) => {
+    console.log(...row);
+});

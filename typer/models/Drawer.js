@@ -5,6 +5,7 @@ export class Drawer {
 
     /**
      * Constructs a new Drawer object.
+     * @param {HTMLCanvasElement} canvas the canvas object to draw on
      */
     constructor(canvas) {
         this._canvas = canvas;
@@ -21,8 +22,8 @@ export class Drawer {
         this._canvas.width = window.innerWidth;
         this._canvas.height = window.innerHeight;
         // canvas center
-        let canvasCenterX = this._canvas.width / 2;
-        let canvasCenterY = this._canvas.height / 2;
+        const canvasCenterX = this._canvas.width / 2;
+        const canvasCenterY = this._canvas.height / 2;
 
         return { canvasCenterX, canvasCenterY };
     } // init
@@ -38,7 +39,7 @@ export class Drawer {
      * Draws the passed in object onto the canvas.
      * @param {function} drawMethod the method to use to draw with parameters
      *                              already applied using Function.bind
-     * @param {string} fillColor    the color to use for the fill
+     * @param {string}   fillColor  the color to use for the fill
      */
     draw(drawMethod, fillColor) {
         this._context.beginPath();
