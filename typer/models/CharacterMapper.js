@@ -35,7 +35,9 @@ export class CharacterMapper {
     /**
      * Returns an array representing the character passed in.
      * @param {string} character the character to create an array for
+     * @throws {Error} if character is not a string nor is a length of one
      * @return an array representing the character passed in
+     *         where a truthy index indicates that a pixel is present
      */
     getArrayFor(character) {
         if (typeof character !== 'string' || character.length !== 1) {
@@ -77,6 +79,7 @@ export class CharacterMapper {
         // The looping is done this way to maximize performance.
         // See the following for elaboration:
         // https://stackoverflow.com/questions/5349425/whats-the-fastest-way-to-loop-through-an-array-in-javascript
+        // Also, forEach is not defined for this type.
         const _2dVersion = [];
         let currentRow = [];
         const imageArrayLength = imageArray.length;

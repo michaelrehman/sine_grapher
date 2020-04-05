@@ -1,7 +1,7 @@
 import { Drawer } from '../models/Drawer.js';
-import { Circle } from '../models/Circle.js';
+import { Circle, CircleBehavior } from '../models/Circle.js';
 import { CharacterMapper } from '../models/CharacterMapper.js';
-import { COLORS, RADIUS_BOUNDS, SPEED_SCALAR, CIRCLE_AMOUNT } from './constants.js';
+import { COLORS, RADIUS_BOUNDS, SPEED_SCALAR, CIRCLE_AMOUNT, OFFSET } from './constants.js';
 
 /**
  * Namespace that contains all necessary globals.
@@ -10,9 +10,13 @@ import { COLORS, RADIUS_BOUNDS, SPEED_SCALAR, CIRCLE_AMOUNT } from './constants.
  */
 const GLOBALS = {
     drawer: new Drawer(document.querySelector('canvas')),
+    characterMapper: new CharacterMapper(),
     canvasCenterX: undefined,
     canvasCenterY: undefined,
-    circles: null
+    circles: {
+        [CircleBehavior.AMBIENT]: [],
+        [CircleBehavior.REVOLVING]: []
+    }
 };
 
 /**
@@ -65,7 +69,8 @@ const FUNCTIONS = Object.freeze({
      * @return an array of Circle objects sorted by color
      */
     _createCircles(amount) {
-        let circles = [];
+        const circles = [];
+
         // create circles
         for (let i = 0; i < amount; i++) {
             circles.push(this._createCircle());
@@ -77,15 +82,31 @@ const FUNCTIONS = Object.freeze({
     },
 
     /**
+     * Get a bounded arc method for the provided Circle object.
+     * @param {Circle} circle the Circle object that will be drawn
+     * @return the bounded arc method
+     */
+    _getBoundedArcMethod(circle) {
+        const drawMethodArgs = [circle._x, circle._y, circle._radius, 0, Math.PI * 2];
+        const drawMethod = GLOBALS.drawer._context.arc.bind(GLOBALS.drawer._context, ...drawMethodArgs);
+        return drawMethod;
+    },
+
+    /**
      * Handles all necessary operations when resizing the window.
      */
     init() {
         const { canvasCenterX, canvasCenterY } = GLOBALS.drawer.init(); // resizes
+        // update properties
         Object.assign(GLOBALS, {
             canvasCenterX,
-            canvasCenterY,
-            circles: this._createCircles(CIRCLE_AMOUNT)
-        }); // update properties
+            canvasCenterY
+        });
+        // create new ambient circles
+        // TODO: adjust position of other circles
+        Object.assign(GLOBALS.circles, {
+            [CircleBehavior.AMBIENT]: this._createCircles(CIRCLE_AMOUNT)
+        });
     },
 
     /**
@@ -95,29 +116,54 @@ const FUNCTIONS = Object.freeze({
         // clear canvas
         GLOBALS.drawer.clear();
 
-        GLOBALS.circles.forEach((circle) => {
-            // specify the drawing method and parameters to use and delegate execution to a Drawer object
-            const drawMethodArgs = [circle._x, circle._y, circle._radius, 0, Math.PI * 2];
-            const drawMethod = GLOBALS.drawer._context.arc.bind(GLOBALS.drawer._context, ...drawMethodArgs);
-            GLOBALS.drawer.draw(drawMethod, circle._color);
-
-            // update the circle's position and velocity
-            circle.update(GLOBALS.drawer._canvas);
-        });
+        for (const circleType in GLOBALS.circles) {
+            GLOBALS.circles[circleType].forEach((circle) => {
+                // get the bounded draw method and delegate execution to a Drawer object
+                GLOBALS.drawer.draw(this._getBoundedArcMethod(circle), circle._color);
+                // update the circle's position and velocity
+                circle.update(GLOBALS.drawer._canvas);
+            });
+        }
 
         // get next animation frame
         window.requestAnimationFrame(FUNCTIONS.update.bind(FUNCTIONS)); // `this` gets set to `window` normally
+    },
+
+    /**
+     *
+     *
+     * @param {KeyboardEvent} event     the event object
+     * @param {string}        event.key the key that triggered the event object
+     */
+    drawCharacter({ key }) {
+        const charArray = GLOBALS.characterMapper.getArrayFor(key);
+        for (let r = 0; r < charArray.length; r++) {
+            const row = charArray[r];
+            for (let c = 0; c < row.length; c++) {
+                // the individual elements are truthy if a pixel is present
+                if (row[c]) {
+                    const circle = this._createCircle();
+                    circle.isMoving = false;
+                    circle._radius = 5;
+
+                    Circle.moveCircleTo(
+                        circle,
+                        (GLOBALS.canvasCenterY / 2) + (c * OFFSET),
+                        (GLOBALS.canvasCenterX / 2) + (r * OFFSET)
+                    );
+
+                    circle.setBehavior(CircleBehavior.REVOLVING);
+                    GLOBALS.circles[CircleBehavior.REVOLVING].push(circle);
+                } // if
+            }
+        } // for
     }
 });
 
+// events
 window.addEventListener('resize', FUNCTIONS.init.bind(FUNCTIONS)); // not using bind would set `this` to `window`
-window.addEventListener('keydown', () => { /* TODO */ });
+window.addEventListener('keydown', FUNCTIONS.drawCharacter.bind(FUNCTIONS));
 
+// get things started
 FUNCTIONS.init();
 FUNCTIONS.update();
-
-// Test CharacterMapper
-const charVis = new CharacterMapper().getArrayFor('K');
-charVis.forEach((row) => {
-    console.log(...row);
-});

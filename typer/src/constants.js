@@ -26,3 +26,12 @@ export const SPEED_SCALAR = 5;
  * @readonly
  */
 export const CIRCLE_AMOUNT = 200;
+
+/**
+ * The offset between each Circle when
+ * using them to draw a character onto
+ * the canvas.
+ * @constant {!number}
+ * @readonly
+ */
+export const OFFSET = 10;

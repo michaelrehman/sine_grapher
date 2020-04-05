@@ -1,9 +1,8 @@
 # TODO
 A list of things that have yet to be implemented.
 
-
 - [ ] [Sort](#sort)
-- [ ] [Map Out Characters in Coordinates](#map-out-characters-in-coordinates)
+- [x] [Map Out Characters in Coordinates](#map-out-characters-in-coordinates)
 - [ ] [Move Circles to Mapped Coordinates](#move-circles-to-mapped-coordinates)
 - [ ] [Check for BKSPC and Remove Character from Canvas](#check-for-bkspc-and-remove-character-from-canvas)
 
@@ -64,15 +63,14 @@ compareTo(otherCircle) {
 ```
 
 #### Thoughts
-The `_getInsertIndexByColor` method still loops through the array and if I knew how, I would provide time complexity estimate to gauge how effetive this implementation is.
-
+The `_getInsertIndexByColor` method still loops through the array and if I knew how, I would provide time complexity estimate to gauge how effetive this implementation is
 Perhaps I should optimize `FUNCTIONS._createCircle` instead by setting a randomly determined quota of each color that sum up to `CIRCLE_AMOUNT`.
 
 ## Map Out Characters in Coordinates
 - [x] represent each Character as a 2D number array
    - [x] create a secondary canvas element, draw the character, get array from image data, delete/clear extra canvas
    - [x] convert to 2D array
-- [ ] use a scalar to create coordinates from array indexes
+- [x] use a scalar to create coordinates from array indexes
 
 ## Move Circles to Mapped Coordinates
 - [ ] Keep a minimum number of ambient circles
