@@ -73,10 +73,9 @@ Perhaps I should optimize `FUNCTIONS._createCircle` instead by setting a randoml
 - [x] use a scalar to create coordinates from array indexes
 
 ## Move Circles to Mapped Coordinates
-- [ ] Keep a minimum number of ambient circles
-- [ ] Enlarge circles to use
-- [ ] Generate more circles if necessary
-- [ ] Move already existing characters when more are added or deleted
+- [x] Generate and enlarge new circles
+- [ ] Animate circles in
+- [ ] Move already existing characters when more are added or deleted (keep characters centered)
 
 ## Check for BKSPC and Remove Character from Canvas
 - [ ] Deleting extraneous circles

@@ -1,3 +1,14 @@
+import { RADIANS } from '../../sine_grapher/src/constants.js';
+
+/**
+ * An immutable array containing all
+ * cosine values from radians listed on
+ * the unit circle.
+ * @constant {!number[]}
+ * @readonly
+ */
+export const COS_VALUES = RADIANS.map((radian) => Math.cos(radian));
+
 /**
  * A constant array containing multiple colors.
  * @constant {!string[]}
@@ -22,6 +33,7 @@ export const SPEED_SCALAR = 5;
 
 /**
  * The number of Circle objects to create.
+ * Also doubles as a minimum number of ambient circles to have.
  * @constant {!number}
  * @readonly
  */

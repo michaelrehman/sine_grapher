@@ -1,3 +1,6 @@
+import { SIN_VALUES } from '../../sine_grapher/src/constants.js';
+import { COS_VALUES } from '../src/constants.js';
+
 /**
  * Object that represents an enum
  * of different circle behaviors.
@@ -50,20 +53,9 @@ export class Circle {
             _dy: dy,
             _radius: radius,
             _color: color,
-            _behavior: behavior
         });
+        this.setBehavior(behavior);
     } // constructor
-
-    /**
-     * Moves the specified Circle
-     * object to the specified coordinates.
-     * @param {Circle} circle the Circle object to move
-     * @param {number} x      the x-coordinate to move it to
-     * @param {number} y      the y-coordinate to move it to
-     */
-    static moveCircleTo(circle, x, y) {
-        Object.assign(circle, { _x: x, _y: y });
-    } // moveTo
 
     /**
      * Updates this Circle's x velocity if
@@ -102,37 +94,103 @@ export class Circle {
     } // _updatePosition
 
     /**
+     * Handles moving the Circle around on the canvas as if it were just bouncing around.
+     * @param {*} maxHorizontal the maximum horizontal bound of the Circle on the canvas
+     * @param {*} maxVertical   the maximum vertical bound of the Circle on the canvas
+     * @throws {Error} if maxHorizontal or maxVertical is falsy
+     */
+    _handleAmbient(maxHorizontal, maxVertical) {
+        if (!maxHorizontal || !maxVertical) {
+            throw new Error('Both bounds must be provided.');
+        } // if
+        this._updateDX(0, maxHorizontal);
+        this._updateDY(0, maxVertical);
+        this._updatePosition();
+    } // _handleAmbient
+
+    _handleRevolving() {
+        const randomScalar = Math.random() * 1.5;
+        const newXCoordinate = this._center.x + (COS_VALUES[this._center.currentAngle] * this._radius * randomScalar);
+        const newYCoordinate = this._center.y + (SIN_VALUES[this._center.currentAngle] * this._radius * randomScalar);
+        // console.log(typeof this._radius);
+        this._center.currentAngle++;
+        if (this._center.currentAngle === SIN_VALUES.length) {
+            this._center.currentAngle = 0;
+        } // if
+        // TODO: move in a circle of various radii and times (and dont use moveTo for it)
+        this.moveTo(newXCoordinate, newYCoordinate);
+    } // _handleRevolving
+
+    /**
      * Updates this Circle's x and y
      * coordinates based on its velocities.
+     *
      * @param {number} bounds.width  the width of the container
      * @param {number} bounds.height the height of the container
      */
-    update({ width: maxHorizontal, height: maxVertical }) {
-        // STRONGLY disagree with this identation but whatever
+    update({ width: maxHorizontal, height: maxVertical }={}) {
         switch (this._behavior) {
         case CircleBehavior.AMBIENT:
-            this._updateDX(0, maxHorizontal);
-            this._updateDY(0, maxVertical);
-            this._updatePosition();
+            this._handleAmbient(maxHorizontal, maxVertical);
             break;
         case CircleBehavior.REVOLVING:
-            // TODO: handle behavior
+            this._handleRevolving();
             break;
-        } // switch
+        } // if
     } // update
 
     /**
+     * Moves the specified Circle
+     * object to the specified coordinates.
+     * @param {Circle} circle the Circle object to move
+     * @param {number} x      the x-coordinate to move it to
+     * @param {number} y      the y-coordinate to move it to
+     */
+    moveTo(x, y) {
+        Object.assign(this, { _x: x, _y: y });
+    } // moveTo
+
+    /**
      * Sets the new behavior for this Circle object to use.
+     *
+     * This method is called by the contructor to set
+     * the inital behavior, but it can be used on its own.
+     *
+     * Note that setCenter will only have an effect if
+     * the behavior is set to CircleBehavior.REVOLVING.
+     *
      * @param {CircleBehavior} newBehavior the new behavior
+     * @param {boolean}        [setCenter=false] if true, overrides the center to revolve around
      * @throws {Error} if newBehavior is not one of CircleBehavior
      */
-    setBehavior(newBehavior) {
+    setBehavior(newBehavior, setCenter=false) {
         // Check if the valuse passed in is a key in the "enum".
         // Can check this way because the values === their key.
         if (!CircleBehavior[newBehavior]) {
             throw new Error('Invalid behavior.');
-        } // if
+        } else if (newBehavior === CircleBehavior.REVOLVING && setCenter) {
+            // set the current position as the point revolve around
+            this.setCenter(this._x, this._y);
+        }// if
         this._behavior = CircleBehavior[newBehavior];
     } // setBehavior
+
+    /**
+     * Sets the center to revolve around.
+     * @param {number} xCenter the new x-center to revolve around if behavior
+     *                         is set to CircleBehavior.REVOLVING
+     * @param {number} yCenter the new y-center to revolve around if behavior
+     *                         is set to CircleBehavior.REVOLVING
+     */
+    setCenter(xCenter, yCenter) {
+        // No `this._center` because it may not have been intialized to an object.
+        Object.assign(this, {
+            _center: {
+                x: xCenter,
+                y: yCenter,
+                currentAngle: 0
+            }
+        });
+    } // center
 
 } // Circle
