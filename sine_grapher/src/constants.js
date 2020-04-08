@@ -22,6 +22,13 @@ export const RADIANS = Object.freeze([
 ]); // length = 16
 
 /**
+ * An immutable array containing all
+ * sine values from radians listed on
+ * the unit circle.
+ */
+export const SIN_VALUES = RADIANS.map((radian) => Math.sin(radian));
+
+/**
  * The amount of bars to draw onto the canvas.
  */
 export const BAR_AMOUNT = RADIANS.length;

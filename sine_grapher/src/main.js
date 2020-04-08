@@ -1,6 +1,6 @@
 import { Bar } from '../models/Bar.js';
 import {
-    RADIANS, BAR_WIDTH, BAR_GAP, BAR_HEIGHT_SCALAR, BAR_AMOUNT,
+    SIN_VALUES, BAR_WIDTH, BAR_GAP, BAR_HEIGHT_SCALAR, BAR_AMOUNT,
     GROW_FRAMES, HEIGHT_THRESHOLD, FILL_COLOR, CYCLE_WIDTH
 } from './constants.js';
 
@@ -14,18 +14,6 @@ let canvasCenterY = undefined;
 let bars = null;
 
 /**
- * Creates a mapping of all values on the unit
- * circle to their sin value according to Math.sin.
- */
-const getSinValues = () => {
-    const sinValues = [];
-    RADIANS.forEach((radian) => {
-        sinValues.push(Math.sin(radian));
-    });
-    return sinValues;
-};
-
-/**
  * Makes an array containing the number of Bar objects specified.
  * The height of each Bar objects is set according to a sine wave.
  *
@@ -37,18 +25,16 @@ const makeSinBars = (amount) => {
     // variable to keep track of the
     // current sin value to use.
     let sinTracker = 0;
-    const sinValues = getSinValues();
-
     const bars = [];
     for (let i = 0; i < amount; i++) {
         // Reset sinTracker to the
         // beginning if it reaches the end.
-        if (sinTracker >= sinValues.length) {
+        if (sinTracker >= SIN_VALUES.length) {
             sinTracker = 0;
         } // if
 
-        const selectedSinValue = sinValues[sinTracker++];
-        const nextSinValue = sinValues[sinTracker];
+        const selectedSinValue = SIN_VALUES[sinTracker++];
+        const nextSinValue = SIN_VALUES[sinTracker];
         bars.push(new Bar(selectedSinValue, nextSinValue));
     } // for
     return bars;
