@@ -15,7 +15,7 @@ const GLOBALS = {
     canvasCenterY: undefined,
     circles: {
         [CircleBehavior.AMBIENT]: [],
-        [CircleBehavior.REVOLVING]: []
+        [CircleBehavior.ORBITING]: []
     },
     cursorPosition: 0 // width of a character in pixels
 };
@@ -158,8 +158,8 @@ const FUNCTIONS = Object.freeze({
 
                     // Move the circle to where it needs to be
                     circle.moveTo(xCoordinate, yCoordinate);
-                    circle.setBehavior(CircleBehavior.REVOLVING, true);
-                    GLOBALS.circles[CircleBehavior.REVOLVING].push(circle);
+                    circle.setBehavior(CircleBehavior.ORBITING, true);
+                    GLOBALS.circles[CircleBehavior.ORBITING].push(circle);
                 } // if
             } // for
         } // for

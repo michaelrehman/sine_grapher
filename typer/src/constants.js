@@ -47,3 +47,10 @@ export const CIRCLE_AMOUNT = 200;
  * @readonly
  */
 export const OFFSET = 10;
+
+/**
+ * The threshold used to indicate when a Circle's
+ * coordinates have reached its coordinates under
+ * Circle._movingToward.
+ */
+export const THRESHOLD = 1;

@@ -1,5 +1,5 @@
-import { SIN_VALUES } from '../../sine_grapher/src/constants.js';
-import { COS_VALUES } from '../src/constants.js';
+import { Orbit } from './Orbit.js';
+import { THRESHOLD } from '../src/constants.js';
 
 /**
  * Object that represents an enum
@@ -13,14 +13,14 @@ import { COS_VALUES } from '../src/constants.js';
  * @const {!Object.<string, string>}
  * @readonly
  *
- * @property {string} CircleBehavior.AMBIENT   move the Circle around as if
- *                                             it's bouncing off the edges
- * @property {string} CircleBehavior.REVLOVING move the Circle as if it's
- *                                             revloving around a point
+ * @property {string} CircleBehavior.AMBIENT  move the Circle around as if
+ *                                            it's bouncing off the edges
+ * @property {string} CircleBehavior.ORBITING move the Circle as if it's
+ *                                            orbiting around a point
  */
 export const CircleBehavior = Object.freeze({
     AMBIENT: 'AMBIENT',
-    REVOLVING: 'REVOLVING'
+    ORBITING: 'ORBITING'
 });
 
 /**
@@ -34,6 +34,7 @@ export class Circle {
      * @param {object}  config                 object containing the properties for this Circle
      * @param {number}  config.x               x-coodinate of this Circle
      * @param {number}  config.y               y-coordinate of this Circle
+     * @param {number}  config.radius          the radius of this Circle
      * @param {number}  config.dx              x-velocity of this Circle
      * @param {number}  config.dy              y-velocity of this Circle
      * @param {string}  config.color           color of this Circle
@@ -41,7 +42,7 @@ export class Circle {
      */
     constructor({ x, y, radius, dx, dy, color, behavior=CircleBehavior.AMBIENT }) {
         // Set initial velocities to 0 if REVLOVING
-        if (behavior === CircleBehavior.REVOLVING) {
+        if (behavior === CircleBehavior.ORBITING) {
             dx = 0;
             dy = 0;
         } // if
@@ -52,7 +53,7 @@ export class Circle {
             _dx: dx,
             _dy: dy,
             _radius: radius,
-            _color: color,
+            _color: color
         });
         this.setBehavior(behavior);
     } // constructor
@@ -88,15 +89,15 @@ export class Circle {
     /**
      * Updates this Circle's position based on its velocities.
      */
-    _updatePosition() {
+    _updatePositionWithVelocity() {
         this._x += this._dx;
         this._y += this._dy;
-    } // _updatePosition
+    } // _updatePositionWithVelocity
 
     /**
      * Handles moving the Circle around on the canvas as if it were just bouncing around.
-     * @param {*} maxHorizontal the maximum horizontal bound of the Circle on the canvas
-     * @param {*} maxVertical   the maximum vertical bound of the Circle on the canvas
+     * @param {number} maxHorizontal the maximum horizontal bound of the Circle on the canvas
+     * @param {number} maxVertical   the maximum vertical bound of the Circle on the canvas
      * @throws {Error} if maxHorizontal or maxVertical is falsy
      */
     _handleAmbient(maxHorizontal, maxVertical) {
@@ -105,25 +106,35 @@ export class Circle {
         } // if
         this._updateDX(0, maxHorizontal);
         this._updateDY(0, maxVertical);
-        this._updatePosition();
+        this._updatePositionWithVelocity();
     } // _handleAmbient
 
-    _handleRevolving() {
-        const randomScalar = Math.random() * 1.5;
-        const newXCoordinate = this._center.x + (COS_VALUES[this._center.currentAngle] * this._radius * randomScalar);
-        const newYCoordinate = this._center.y + (SIN_VALUES[this._center.currentAngle] * this._radius * randomScalar);
-        // console.log(typeof this._radius);
-        this._center.currentAngle++;
-        if (this._center.currentAngle === SIN_VALUES.length) {
-            this._center.currentAngle = 0;
+    /**
+     * Orbits this circle around a path specified by an Orbit object.
+     * @throws {Error} if this._orbit is falsy or its type !== 'object'
+     */
+    _handleOrbiting() {
+        // Check if the property exists (typeof null === 'object')
+        if (!this._orbit || typeof this._orbit !== 'object') {
+            throw new Error('This Circle does not have an Orbit object.');
         } // if
-        // TODO: move in a circle of various radii and times (and dont use moveTo for it)
-        this.moveTo(newXCoordinate, newYCoordinate);
-    } // _handleRevolving
+
+        // Update coordinates only if necessary
+        if (this.hasReacedNextPoint(THRESHOLD)) {
+            this._movingToward = this._orbit.followOrbit();
+        } // if
+
+        // Calculate next coordinate while factoring in amount of franes to react this._movingToward by.
+        const inbetweenX = this._x + ((this._movingToward.x - this._x) / this._orbit.travelFrames);
+        const inbetweenY = this._y + ((this._movingToward.y - this._y) / this._orbit.travelFrames);
+
+        this.moveTo(inbetweenX, inbetweenY);
+    } // _handleOrbiting
 
     /**
      * Updates this Circle's x and y
-     * coordinates based on its velocities.
+     * coordinates based on its velocities
+     * and behavior.
      *
      * @param {number} bounds.width  the width of the container
      * @param {number} bounds.height the height of the container
@@ -133,11 +144,16 @@ export class Circle {
         case CircleBehavior.AMBIENT:
             this._handleAmbient(maxHorizontal, maxVertical);
             break;
-        case CircleBehavior.REVOLVING:
-            this._handleRevolving();
+        case CircleBehavior.ORBITING:
+            this._handleOrbiting();
             break;
         } // if
     } // update
+
+    hasReacedNextPoint(threshold) {
+        return Math.abs(this._x - this._movingToward.x) < threshold
+            && Math.abs(this._y - this._movingToward.y) < threshold;
+    } // hasReacedNextPoint
 
     /**
      * Moves the specified Circle
@@ -156,40 +172,41 @@ export class Circle {
      * This method is called by the contructor to set
      * the inital behavior, but it can be used on its own.
      *
-     * Note that setCenter will only have an effect if
-     * the behavior is set to CircleBehavior.REVOLVING.
+     * Note that setOrbit will only have an effect if
+     * the behavior is set to CircleBehavior.ORBITING.
      *
-     * @param {CircleBehavior} newBehavior the new behavior
-     * @param {boolean}        [setCenter=false] if true, overrides the center to revolve around
+     * @param {CircleBehavior} newBehavior      the new behavior
+     * @param {boolean}        [setOrbit=false] if true, overrides the orbit to follow
      * @throws {Error} if newBehavior is not one of CircleBehavior
      */
-    setBehavior(newBehavior, setCenter=false) {
+    setBehavior(newBehavior, setOrbit=false) {
         // Check if the valuse passed in is a key in the "enum".
         // Can check this way because the values === their key.
         if (!CircleBehavior[newBehavior]) {
             throw new Error('Invalid behavior.');
-        } else if (newBehavior === CircleBehavior.REVOLVING && setCenter) {
-            // set the current position as the point revolve around
-            this.setCenter(this._x, this._y);
+        } else if (newBehavior === CircleBehavior.ORBITING && setOrbit) {
+            // set the current position as the orbit center
+            // generate an orbit radius from [2, this._radius + 2)
+            const orbitConfig = {
+                x: this._x,
+                y: this._y,
+                radius: (Math.random() * this._radius) + 2 // TODO: magic #
+            };
+            this.setOrbit(new Orbit(orbitConfig));
         }// if
         this._behavior = CircleBehavior[newBehavior];
     } // setBehavior
 
     /**
      * Sets the center to revolve around.
-     * @param {number} xCenter the new x-center to revolve around if behavior
-     *                         is set to CircleBehavior.REVOLVING
-     * @param {number} yCenter the new y-center to revolve around if behavior
-     *                         is set to CircleBehavior.REVOLVING
+     * @param {Orbit} orbit the new orbit path to follow if using CircleBehavior.ORBITING
      */
-    setCenter(xCenter, yCenter) {
-        // No `this._center` because it may not have been intialized to an object.
+    setOrbit(orbit) {
+        // No `this._orbit` because it may not have been intialized to an object.
+        // If it is orbiting, then it will be moving toward a new point.
         Object.assign(this, {
-            _center: {
-                x: xCenter,
-                y: yCenter,
-                currentAngle: 0
-            }
+            _orbit: orbit,
+            _movingToward: orbit.followOrbit()
         });
     } // center
 

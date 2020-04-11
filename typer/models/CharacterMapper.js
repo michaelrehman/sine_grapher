@@ -3,11 +3,6 @@
  */
 export class CharacterMapper {
 
-    /** Value representing that a pixel of the character is present. */
-    static pixelPresent = 1;
-    /** Value representing that a pixel of the character is not present. */
-    static pixelNotPresent = 0;
-
     /**
      * Contructs a new CharacterMapper object.
      */
@@ -106,3 +101,9 @@ export class CharacterMapper {
     } // _convertTo2DArray
 
 } // CharacterMapper
+
+// Because not all browsers support using `static`
+/** Value representing that a pixel of the character is present. */
+CharacterMapper.pixelPresent = 1;
+/** Value representing that a pixel of the character is not present. */
+CharacterMapper.pixelNotPresent = 0;
