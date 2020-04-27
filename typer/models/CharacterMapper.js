@@ -21,7 +21,7 @@ export class CharacterMapper {
             _alreadyCalculated: {}
         });
         // set font weight to something larger and center text
-        this._context.font = '30px Gotu';
+        this._context.font = `${canvas.width - 5}px Gotu`;
         this._context.fillStyle = '#ffffff';
         this._context.textAlign = 'center';
         this._context.textBaseline = 'middle';

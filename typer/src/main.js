@@ -15,9 +15,14 @@ const GLOBALS = {
     canvasCenterY: undefined,
     circles: {
         [CircleBehavior.AMBIENT]: [],
-        [CircleBehavior.ORBITING]: []
+        [CircleBehavior.ORBITING]: [],
+        [CircleBehavior.TRAVELING]: []
     },
-    cursorPosition: 0 // width of a character in pixels
+    cursorPosition: {
+        x: 0,
+        y: 0
+    },
+    inputField: document.querySelector('#keyEventListener'),
 };
 
 /**
@@ -94,6 +99,39 @@ const FUNCTIONS = Object.freeze({
     }, // _getBoundedArcMethod
 
     /**
+     * Returns an integer denoting the "width" of an array,
+     * which I define as the index of the last truthy value
+     * minus the index of the first truthy value plus one.
+     * 
+     * A negative width indicates that no truthy values were found.
+     * 
+     * @param {object[][]} array the array of whose "width" to calculate
+     * @return the "width", as defined above, of array
+     */
+    getArrayWidth(array) {
+        let firstElementIndex = -1;
+        let lastElementIndex = -1;
+        array.forEach((row) => {
+            row.forEach((elem, i) => {
+                if (elem && (firstElementIndex < 0 || i < firstElementIndex)) {
+                    firstElementIndex = i;
+                    lastElementIndex = i;
+                } else if (elem && i > lastElementIndex) {
+                    lastElementIndex = i;
+                }// if
+            });
+            // if (firstElementIndex < 0 && elem) {
+            //     firstElementIndex = i;
+            //     lastElementIndex = i;
+            // } else if (elem) {
+            //     lastElementIndex = i;
+            // }// if
+        });
+        // console.log(lastElementIndex, firstElementIndex);
+        return lastElementIndex - firstElementIndex + 1;
+    }, // getArrayWidth
+
+    /**
      * Handles all necessary operations when resizing the window.
      */
     init() {
@@ -104,10 +142,12 @@ const FUNCTIONS = Object.freeze({
             canvasCenterY
         });
         // create new ambient circles
-        // TODO: adjust position of other circles
+        // TODO: adjust position of ORBITING circles
         Object.assign(GLOBALS.circles, {
             [CircleBehavior.AMBIENT]: this._createCircles(CIRCLE_AMOUNT)
         });
+        // Focus onto the text field
+        GLOBALS.inputField.focus();
     }, // init
 
     /**
@@ -131,48 +171,81 @@ const FUNCTIONS = Object.freeze({
     }, // update
 
     /**
-     * Draws event.key onto the canvas using Circle objects.
-     *
-     * @param {KeyboardEvent} event     the event object
-     * @param {string}        event.key the key that triggered the event object
+     * Draws key onto the canvas using Circle objects, and updates the "cursor" postion.
+     * @param {string} key the character to draw
+     * @return the number of circles added
      */
-    drawCharacter({ key }) {
+    drawCharacter(key) {
         const charArray = GLOBALS.characterMapper.getArrayFor(key);
-        let rowLength = 0; // to simulate cursor movement
-
-        // TODO: determine the maximum "width" of a row to avoid monospacing
+        let totalCirclesAdded = 0;
         for (let r = 0; r < charArray.length; r++) {
             const row = charArray[r];
-            rowLength = row.length;
-
-            for (let c = 0; c < rowLength; c++) {
+            for (let c = 0; c < row.length; c++) {
                 // the individual elements are truthy if a pixel is present
                 if (row[c]) {
                     const circle = this._createCircle();
                     circle._radius = 5;
 
                     // Calculate coordinates
-                    const xCoordinate = (GLOBALS.canvasCenterX / 2) + (c * OFFSET)
-                                        + GLOBALS.cursorPosition;
-                    const yCoordinate = (GLOBALS.canvasCenterY / 2) + (r * OFFSET);
+                    // const xCoordinate = (GLOBALS.canvasCenterX / 2) + (c * OFFSET) + GLOBALS.cursorPosition.x;
+                    const xCoordinate = 0 + (c * OFFSET) + GLOBALS.cursorPosition.x; // TODO: calculate offset caused by canvas center
+                    const yCoordinate = (GLOBALS.canvasCenterY / 2) + (r * OFFSET) + GLOBALS.cursorPosition.y;
 
-                    // Move the circle to where it needs to be
-                    circle.moveTo(xCoordinate, yCoordinate);
-                    circle.setBehavior(CircleBehavior.ORBITING, true);
-                    GLOBALS.circles[CircleBehavior.ORBITING].push(circle);
+                    // Tell the circle where it needs to go
+                    circle.setDestination({ x: xCoordinate, y: yCoordinate });
+                    circle.setBehavior(CircleBehavior.TRAVELING);
+                    GLOBALS.circles[CircleBehavior.TRAVELING].push(circle);
+                    totalCirclesAdded++;
                 } // if
             } // for
         } // for
 
         // Now that the character has been drawn, add offset to give the illusion of typing.
         // Each circle is represented with a circle of radius X.
-        GLOBALS.cursorPosition += rowLength * 6;
+        GLOBALS.cursorPosition.x += charArray[0].length * 6;
+        if (Math.abs(window.innerWidth - GLOBALS.cursorPosition.x) <= 500) {
+            GLOBALS.cursorPosition.y += charArray.length * 8;
+            GLOBALS.cursorPosition.x = 0;
+        } // if
+        return totalCirclesAdded;
     } // drawCharacter
 });
 
-// events
 window.addEventListener('resize', FUNCTIONS.init.bind(FUNCTIONS)); // not using bind would set `this` to `window`
-window.addEventListener('keydown', FUNCTIONS.drawCharacter.bind(FUNCTIONS));
+
+// need to use an input element so backspace doesn't go to previous site and to allow for mobile
+window.addEventListener('click', () => GLOBALS.inputField.focus());
+
+window.addEventListener('changedbehavior', (event) => {
+    const { circle, from, to } = event.detail;
+    const circleIndex = GLOBALS.circles[from].indexOf(circle);
+    // delete from old classification
+    GLOBALS.circles[from].splice(circleIndex, 1);
+    // add to new classification
+    GLOBALS.circles[to].push(circle);
+});
+
+// TODO: magic numbers galore
+const removeCount = []; // TODO: refers to most recent one
+GLOBALS.inputField.addEventListener('keydown', ({ key }) => {
+    switch (key) {
+    case 'Backspace':
+        GLOBALS.circles[CircleBehavior.TRAVELING] = []; // TODO: error prone
+
+        const amountToRemove = removeCount[removeCount.length - 1];
+        const orbitingCircles = GLOBALS.circles[CircleBehavior.ORBITING];
+        orbitingCircles.splice(orbitingCircles.length - amountToRemove, amountToRemove);
+
+        removeCount.pop();
+        Object.assign(GLOBALS.cursorPosition, { x: GLOBALS.cursorPosition.x - 35 * 6 });
+        break;
+    case 'Enter':
+        GLOBALS.cursorPosition.y += 34 * 12;
+        GLOBALS.cursorPosition.x = 0;
+    default:
+        removeCount.push(FUNCTIONS.drawCharacter.call(FUNCTIONS, key));
+    } // switch
+});
 
 // get things started
 FUNCTIONS.init();

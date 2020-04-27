@@ -13,14 +13,17 @@ import { THRESHOLD } from '../src/constants.js';
  * @const {!Object.<string, string>}
  * @readonly
  *
- * @property {string} CircleBehavior.AMBIENT  move the Circle around as if
- *                                            it's bouncing off the edges
- * @property {string} CircleBehavior.ORBITING move the Circle as if it's
- *                                            orbiting around a point
+ * @property {string} CircleBehavior.AMBIENT   move the Circle around as if
+ *                                             it's bouncing off the edges
+ * @property {string} CircleBehavior.ORBITING  move the Circle as if it's
+ *                                             orbiting around a point
+ * @property {string} CircleBehavior.TRAVELING move the Circle as if it's
+ *                                             intentionally moving toward a point
  */
 export const CircleBehavior = Object.freeze({
     AMBIENT: 'AMBIENT',
-    ORBITING: 'ORBITING'
+    ORBITING: 'ORBITING',
+    TRAVELING: 'TRAVELING'
 });
 
 /**
@@ -41,12 +44,6 @@ export class Circle {
      * @param {boolean} [config.behavior=CircleBehavior.AMBIENT] indicates if this Circle should move or not
      */
     constructor({ x, y, radius, dx, dy, color, behavior=CircleBehavior.AMBIENT }) {
-        // Set initial velocities to 0 if REVLOVING
-        if (behavior === CircleBehavior.ORBITING) {
-            dx = 0;
-            dy = 0;
-        } // if
-
         Object.assign(this, {
             _x: x,
             _y: y,
@@ -95,7 +92,7 @@ export class Circle {
     } // _updatePositionWithVelocity
 
     /**
-     * Handles moving the Circle around on the canvas as if it were just bouncing around.
+     * Handles moving this Circle around on the canvas as if it were just bouncing around.
      * @param {number} maxHorizontal the maximum horizontal bound of the Circle on the canvas
      * @param {number} maxVertical   the maximum vertical bound of the Circle on the canvas
      * @throws {Error} if maxHorizontal or maxVertical is falsy
@@ -119,22 +116,51 @@ export class Circle {
             throw new Error('This Circle does not have an Orbit object.');
         } // if
 
+        // Calculate next coordinate while factoring in amount of franes to reach this._destination by.
+        const inbetweenX = this._x + (this._destination.x - this._x) / this._orbit.travelFrames;
+        const inbetweenY = this._y + (this._destination.y - this._y) / this._orbit.travelFrames;
+        this.moveTo(inbetweenX, inbetweenY);
+
         // Update coordinates only if necessary
-        if (this.hasReacedNextPoint(THRESHOLD)) {
-            this._movingToward = this._orbit.followOrbit();
+        if (this.hasReacedDestination()) {
+            this._destination = this._orbit.followOrbit();
+        } // if
+    } // _handleOrbiting
+
+    /**
+     * Handles moving this Circle toward a point
+     * specified through this.setDestination.
+     * @throws {Error} if this._destination was not set by this.setDestination
+     */
+    _handleTraveling() {
+        // Prechecks
+        if (!this._destination || typeof this._destination !== 'object') {
+            throw new Error('This Circle does not have a destination to travel to.');
         } // if
 
-        // Calculate next coordinate while factoring in amount of franes to react this._movingToward by.
-        const inbetweenX = this._x + ((this._movingToward.x - this._x) / this._orbit.travelFrames);
-        const inbetweenY = this._y + ((this._movingToward.y - this._y) / this._orbit.travelFrames);
+        const nextX = this._x + (this._destination.x - this._x) / 5; // TODO: magic #
+        const nextY = this._y + (this._destination.y - this._y) / 5; // TODO: magic #
+        this.moveTo(nextX, nextY);
 
-        this.moveTo(inbetweenX, inbetweenY);
-    } // _handleOrbiting
+        // Switch to CircleBehavior.ORBITING once destination has been reached.
+        if (this.hasReacedDestination()) {
+            // Dispatch an event through window to notify `main.js`
+            // to switch this Circle to a new classification
+            window.dispatchEvent(new CustomEvent('changedbehavior', {
+                detail: {
+                    circle: this,
+                    from: this._behavior,
+                    to: CircleBehavior.ORBITING
+                }
+            }));
+            this.setBehavior(CircleBehavior.ORBITING, true);
+        } // if
+    } // _handleTraveling
 
     /**
      * Updates this Circle's x and y
      * coordinates based on its velocities
-     * and behavior.
+     * and/or behavior.
      *
      * @param {number} bounds.width  the width of the container
      * @param {number} bounds.height the height of the container
@@ -147,13 +173,22 @@ export class Circle {
         case CircleBehavior.ORBITING:
             this._handleOrbiting();
             break;
-        } // if
+        case CircleBehavior.TRAVELING:
+            this._handleTraveling();
+            break;
+        } // switch
     } // update
 
-    hasReacedNextPoint(threshold) {
-        return Math.abs(this._x - this._movingToward.x) < threshold
-            && Math.abs(this._y - this._movingToward.y) < threshold;
-    } // hasReacedNextPoint
+    /**
+     * Checks if this Circle has reached its destination.
+     * @param {number} [threshold=THRESHOLD] the acceptable difference between this
+     *                           Circle's position and its destination
+     * @return true if the destination has been reached; false otherwise
+     */
+    hasReacedDestination(threshold=THRESHOLD) {
+        return Math.abs(this._x - this._destination.x) < threshold
+            && Math.abs(this._y - this._destination.y) < threshold;
+    } // hasReacedDestination
 
     /**
      * Moves the specified Circle
@@ -193,9 +228,23 @@ export class Circle {
                 radius: (Math.random() * this._radius) + 2 // TODO: magic #
             };
             this.setOrbit(new Orbit(orbitConfig));
-        }// if
+        } // if
+        // TODO: set intial destination with TRAVELING
         this._behavior = CircleBehavior[newBehavior];
     } // setBehavior
+
+    /**
+     * Sets the destination coordinates to travel to.
+     * Only has an effect if this Circle's behavior is
+     * one of CircleBehavior.ORBITING or CircleBehavior.TRAVELING.
+     * 
+     * @param {Object.<string, number>} destinationCoordinates   the set of coordinates to travel to
+     * @param {number}                  destinationCoordinates.x the x-coordinate to travel to
+     * @param {number}                  destinationCoordinates.y the y-coordinate to travel to
+     */
+    setDestination(destinationCoordinates) {
+        this._destination = destinationCoordinates;
+    } // setDestination
 
     /**
      * Sets the center to revolve around.
@@ -203,11 +252,11 @@ export class Circle {
      */
     setOrbit(orbit) {
         // No `this._orbit` because it may not have been intialized to an object.
-        // If it is orbiting, then it will be moving toward a new point.
         Object.assign(this, {
-            _orbit: orbit,
-            _movingToward: orbit.followOrbit()
+            _orbit: orbit
         });
+        // If it is orbiting, then it will be moving toward a new point.
+        this.setDestination(orbit.followOrbit());
     } // center
 
 } // Circle

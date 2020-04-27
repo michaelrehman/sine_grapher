@@ -18,8 +18,8 @@ export class Orbit {
             _x: x,
             _y: y,
             _radius: radius,
-            currentAngleIndex: 0,
-            travelFrames: Math.floor(Math.random() * 5) + 1 // TODO: magic #
+            currentAngleIndex: Math.floor(Math.random() * SIN_VALUES.length),
+            travelFrames: Math.floor(Math.random() * 8) + 3 // TODO: magic #
         });
     } // constrcutor
 

@@ -74,8 +74,8 @@ Perhaps I should optimize `FUNCTIONS._createCircle` instead by setting a randoml
 
 ## Move Circles to Mapped Coordinates
 - [x] Generate and enlarge new circles
-- [ ] Animate circles in
-- [ ] Move already existing characters when more are added or deleted (keep characters centered)
+- [x] Animate circles in
+- [ ] Move already existing characters when more are added or deleted (i.e., keep characters centered and have them wrap even with resize)
 
 ## Check for BKSPC and Remove Character from Canvas
 - [ ] Deleting extraneous circles
