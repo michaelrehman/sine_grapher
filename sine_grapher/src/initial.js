@@ -45,12 +45,6 @@ export const BAR_WIDTH = 15;
 export const BAR_GAP_SCALAR = 1.4;
 
 /**
- * The amount of space between the
- * leftmost side of two bars on the canvas.
- */
-export const BAR_GAP = BAR_WIDTH * BAR_GAP_SCALAR;
-
-/**
  * The value to multiply
  * each Bar object's height by.
  */
@@ -73,6 +67,6 @@ export const HEIGHT_THRESHOLD = 0.1;
 export const FILL_COLOR = '#cccccc';
 
 /**
- * Represents the width of RADIANS.length bar gaps.
+ * The stroke color to use for the center line.
  */
-export const CYCLE_WIDTH = BAR_GAP * RADIANS.length;
+export const LINE_COLOR = '#aa00aa';

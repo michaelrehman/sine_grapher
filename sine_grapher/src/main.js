@@ -1,8 +1,22 @@
 import { Bar } from '../models/Bar.js';
 import {
-    SIN_VALUES, BAR_WIDTH, BAR_GAP, BAR_HEIGHT_SCALAR, BAR_AMOUNT,
-    GROW_FRAMES, HEIGHT_THRESHOLD, FILL_COLOR, CYCLE_WIDTH
-} from './constants.js';
+    SIN_VALUES, BAR_WIDTH, BAR_HEIGHT_SCALAR, BAR_AMOUNT, BAR_GAP_SCALAR,
+    GROW_FRAMES, HEIGHT_THRESHOLD, FILL_COLOR, LINE_COLOR
+} from './initial.js';
+
+/**
+ * All values that the user can affect.
+ * @namespace
+ */
+const CONTROLS = {
+    BAR_WIDTH, BAR_HEIGHT_SCALAR, GROW_FRAMES,
+    BAR_GAP_SCALAR, FILL_COLOR, LINE_COLOR,
+    BAR_GAP: function() {
+        // The space between the left side of bars.
+        // I.e., the bar's width and then some
+        return this.BAR_WIDTH * this.BAR_GAP_SCALAR;
+    }
+};
 
 // Initial setup/globals
 const canvas = document.querySelector('canvas');
@@ -41,6 +55,14 @@ const makeSinBars = (amount) => {
 };
 
 /**
+ * Sets the colors of the canvas context.
+ */
+const setColors = () => {
+    ctx.strokeStyle = CONTROLS.LINE_COLOR;
+    ctx.fillStyle = CONTROLS.FILL_COLOR;
+};
+
+/**
  * Handles all necessary operations when the window is resized.
  * This includes resizing the canvas, finding the canvas center,
  * calculating the number of cycles that can fit, abd setting
@@ -54,15 +76,13 @@ const init = () => {
     canvasCenterX = canvas.width / 2;
     canvasCenterY = canvas.height / 2;
     // bar cycles
-    let cyclesThatCanFit = Math.floor(canvas.width / CYCLE_WIDTH) || 1;
+    const cycleWidth = CONTROLS.BAR_GAP() * BAR_AMOUNT;
+    let cyclesThatCanFit = Math.floor(canvas.width / cycleWidth) || 1;
     bars = Object.freeze(makeSinBars(BAR_AMOUNT * cyclesThatCanFit));
     // canvas styles
     ctx.lineWidth = 8;
-    ctx.strokeStyle = '#aa00aa';
-    ctx.fillStyle = FILL_COLOR;
+    setColors();
 };
-
-window.addEventListener('resize', init);
 
 /**
  * Sets the Bar objects' nextHeight property.
@@ -90,8 +110,8 @@ const shift = () => {
  * scales with the amount of bars.
  */
 const drawBaseLine = () => {
-    const start = canvasCenterX + (0 - bars.length / 2) * BAR_GAP;
-    const end = canvasCenterX + (bars.length - bars.length / 2) * BAR_GAP;
+    const start = canvasCenterX + (0 - bars.length / 2) * CONTROLS.BAR_GAP();
+    const end = canvasCenterX + (bars.length - bars.length / 2) * CONTROLS.BAR_GAP();
     ctx.beginPath();
     ctx.moveTo(start, canvasCenterY);
     ctx.lineTo(end, canvasCenterY);
@@ -114,14 +134,14 @@ const update = () => {
         // moves (i - BARS.length / 2) bar gaps to the left;
         // the same applies if i is greater,
         // but it will move right instead.
-        const offset = (i - bars.length / 2) * BAR_GAP;
+        const offset = (i - bars.length / 2) * CONTROLS.BAR_GAP();
 
         // Draw the bar onto the canvas
         const x = canvasCenterX + offset;
         const y = canvasCenterY;
-        ctx.fillRect(x, y, BAR_WIDTH, bar.height * BAR_HEIGHT_SCALAR);
+        ctx.fillRect(x, y, CONTROLS.BAR_WIDTH, bar.height * CONTROLS.BAR_HEIGHT_SCALAR);
 
-        bar.grow(GROW_FRAMES); // called once per animation frame
+        bar.grow(CONTROLS.GROW_FRAMES); // called once per animation frame
 
         // Check for any bars that have not grown to their next height
         // within a certain threshold. This is because the values will
@@ -139,5 +159,24 @@ const update = () => {
     requestAnimationFrame(update);
 };
 
-init();
-update(); // start the animation
+// gui
+const GUI = new dat.GUI();
+GUI.add(CONTROLS, 'BAR_HEIGHT_SCALAR');
+GUI.add(CONTROLS, 'GROW_FRAMES', 1, 100, 1);
+
+const widthControls = GUI.addFolder('Width Controls');
+widthControls.add(CONTROLS, 'BAR_WIDTH', 1);
+widthControls.add(CONTROLS, 'BAR_GAP_SCALAR', 1);
+
+const colorControls = GUI.addFolder('Color Controls');
+colorControls.addColor(CONTROLS, 'FILL_COLOR');
+colorControls.addColor(CONTROLS, 'LINE_COLOR');
+
+// events
+window.addEventListener('resize', init);
+widthControls.__controllers.forEach((controller) => controller.onChange(init));
+colorControls.__controllers.forEach((controller) => controller.onChange(setColors));
+
+// get things started
+const bootSequence = [init, update];
+bootSequence.forEach((method) => method());
