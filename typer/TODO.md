@@ -63,7 +63,7 @@ compareTo(otherCircle) {
 ```
 
 #### Thoughts
-The `_getInsertIndexByColor` method still loops through the array and if I knew how, I would provide time complexity estimate to gauge how effetive this implementation is
+The `_getInsertIndexByColor` method still loops through the array and if I knew how, I would provide time complexity estimate to gauge how effective this implementation is
 Perhaps I should optimize `FUNCTIONS._createCircle` instead by setting a randomly determined quota of each color that sum up to `CIRCLE_AMOUNT`.
 
 ## Map Out Characters in Coordinates
@@ -76,8 +76,9 @@ Perhaps I should optimize `FUNCTIONS._createCircle` instead by setting a randoml
 - [x] Generate and enlarge new circles
 - [x] Animate circles in
 - [ ] Move already existing characters when more are added or deleted (i.e., keep characters centered and have them wrap even with resize)
+  - Includes updating "cursor position"
 
 ## Check for BKSPC and Remove Character from Canvas
-- [ ] Deleting extraneous circles
-- [ ] Shrink circles
-- [ ] Restore circles to ambient behavior
+- [ ] Keep track of which circles belong to which characters
+- [ ] Update the destination of currently traveling circles
+  - Includes updating "cursor position"

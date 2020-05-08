@@ -1,3 +1,5 @@
+import { FONT_SIZE } from '../src/constants.js';
+
 /**
  * Class used to map characters to arrays.
  */
@@ -9,19 +11,19 @@ export class CharacterMapper {
     constructor() {
         // Create a square to draw characters in
         const canvas = document.createElement('canvas');
-        canvas.width = 35;
+        canvas.width = FONT_SIZE + 5; // include an extra 5px for padding
         canvas.height = canvas.width;
         // set instance variables
         Object.assign(this, {
             _canvas: canvas,
-            _context: canvas.getContext('2d'),
+            _context: canvas.getContext('2d', { alpha: false }),
             _canvasCenterX: canvas.width / 2,
             _canvasCenterY: canvas.height / 2,
             _canvasCorners: [0, 0, canvas.width, canvas.height],
             _alreadyCalculated: {}
         });
         // set font weight to something larger and center text
-        this._context.font = `${canvas.width - 5}px Gotu`;
+        this._context.font = `${FONT_SIZE}px Gotu`;
         this._context.fillStyle = '#ffffff';
         this._context.textAlign = 'center';
         this._context.textBaseline = 'middle';
@@ -75,8 +77,8 @@ export class CharacterMapper {
         // See the following for elaboration:
         // https://stackoverflow.com/questions/5349425/whats-the-fastest-way-to-loop-through-an-array-in-javascript
         // Also, forEach is not defined for this type.
-        const _2dVersion = [];
         let currentRow = [];
+        const _2dVersion = [];
         const imageArrayLength = imageArray.length;
         for (let i = 0; i < imageArrayLength; i += 4) {
             // switch to a new row if necessary

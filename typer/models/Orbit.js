@@ -1,5 +1,6 @@
-import { SIN_VALUES } from '../../sine_grapher/src/constants.js';
-import { COS_VALUES } from '../src/constants.js';
+import { SIN_VALUES } from '../../sine_grapher/src/initial.js';
+import { COS_VALUES, ORBIT_TRAVEL_FACTOR } from '../src/constants.js';
+const { max, min } = ORBIT_TRAVEL_FACTOR;
 
 /**
  * Represents an path to follow that resembles an orbit.
@@ -19,14 +20,14 @@ export class Orbit {
             _y: y,
             _radius: radius,
             currentAngleIndex: Math.floor(Math.random() * SIN_VALUES.length),
-            travelFrames: Math.floor(Math.random() * 8) + 3 // TODO: magic #
+            travelFactor: Math.floor(Math.random() * (max - min + 1)) + min
         });
     } // constrcutor
 
     /**
      * Returns the next x and y coordinate on the path
      * in order to reach the next unit circle defined
-     * point in this.travelFrames amount of frames.
+     * point in this.travelFactor amount of frames.
      * @return an object with x and y properties
      *         that move along this Orbit's path
      */

@@ -1,5 +1,5 @@
 import { Orbit } from './Orbit.js';
-import { THRESHOLD } from '../src/constants.js';
+import { THRESHOLD, TRAVEL_FACTOR } from '../src/constants.js';
 
 /**
  * Object that represents an enum
@@ -116,14 +116,15 @@ export class Circle {
             throw new Error('This Circle does not have an Orbit object.');
         } // if
 
+        const { _x: x, _y: y, _destination: dest, _orbit: orbit } = this;
         // Calculate next coordinate while factoring in amount of franes to reach this._destination by.
-        const inbetweenX = this._x + (this._destination.x - this._x) / this._orbit.travelFrames;
-        const inbetweenY = this._y + (this._destination.y - this._y) / this._orbit.travelFrames;
+        const inbetweenX = x + (dest.x - x) / orbit.travelFactor;
+        const inbetweenY = y + (dest.y - y) / orbit.travelFactor;
         this.moveTo(inbetweenX, inbetweenY);
 
         // Update coordinates only if necessary
         if (this.hasReacedDestination()) {
-            this._destination = this._orbit.followOrbit();
+            this._destination = orbit.followOrbit();
         } // if
     } // _handleOrbiting
 
@@ -138,8 +139,9 @@ export class Circle {
             throw new Error('This Circle does not have a destination to travel to.');
         } // if
 
-        const nextX = this._x + (this._destination.x - this._x) / 5; // TODO: magic #
-        const nextY = this._y + (this._destination.y - this._y) / 5; // TODO: magic #
+        const { _x: x, _y: y, _destination: dest } = this;
+        const nextX = x + (dest.x - this._x) / TRAVEL_FACTOR.x; // TODO: magic #
+        const nextY = y + (dest.y - this._y) / TRAVEL_FACTOR.y; // TODO: magic #
         this.moveTo(nextX, nextY);
 
         // Switch to CircleBehavior.ORBITING once destination has been reached.
@@ -182,12 +184,15 @@ export class Circle {
     /**
      * Checks if this Circle has reached its destination.
      * @param {number} [threshold=THRESHOLD] the acceptable difference between this
-     *                           Circle's position and its destination
+     *                                       Circle's position and its destination
      * @return true if the destination has been reached; false otherwise
      */
     hasReacedDestination(threshold=THRESHOLD) {
-        return Math.abs(this._x - this._destination.x) < threshold
-            && Math.abs(this._y - this._destination.y) < threshold;
+        const { _x: x, _y: y, _destination: dest } = this;
+        const { sqrt, pow } = Math;
+        return sqrt(pow(x - dest.x, 2) + pow(y - dest.y, 2)) < threshold;
+        // return Math.abs(this._x - this._destination.x) < threshold
+        //     && Math.abs(this._y - this._destination.y) < threshold;
     } // hasReacedDestination
 
     /**
@@ -237,7 +242,7 @@ export class Circle {
      * Sets the destination coordinates to travel to.
      * Only has an effect if this Circle's behavior is
      * one of CircleBehavior.ORBITING or CircleBehavior.TRAVELING.
-     * 
+     *
      * @param {Object.<string, number>} destinationCoordinates   the set of coordinates to travel to
      * @param {number}                  destinationCoordinates.x the x-coordinate to travel to
      * @param {number}                  destinationCoordinates.y the y-coordinate to travel to

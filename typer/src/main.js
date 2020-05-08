@@ -1,7 +1,7 @@
 import { Drawer } from '../models/Drawer.js';
 import { Circle, CircleBehavior } from '../models/Circle.js';
 import { CharacterMapper } from '../models/CharacterMapper.js';
-import { COLORS, RADIUS_BOUNDS, SPEED_SCALAR, CIRCLE_AMOUNT, OFFSET } from './constants.js';
+import { COLORS, RADIUS_BOUNDS, SPEED_SCALAR, CIRCLE_AMOUNT, OFFSET, CHAR_CIRCLE_RADIUS, KERNING_SCALAR } from './constants.js';
 
 /**
  * Namespace that contains all necessary globals.
@@ -51,11 +51,12 @@ const FUNCTIONS = Object.freeze({
     /**
      * Creates and returns a Circle object.
      * @private
+     * @param {number} [radius] the radius of the circle; a falsy value will cause a random one to be generated
      * @return a new Circle object with CircleBehavior.AMBIENT behavior
      */
-    _createCircle() {
+    _createCircle(radius) {
         // create radius first so it can be referenced (`+ 1` to include max)
-        const radius = Math.floor(Math.random() * (RADIUS_BOUNDS.max - RADIUS_BOUNDS.min + 1)) + RADIUS_BOUNDS.min;
+        radius = radius ? radius : Math.floor(Math.random() * (RADIUS_BOUNDS.max - RADIUS_BOUNDS.min + 1)) + RADIUS_BOUNDS.min;
         const circleConfig = {
             x: this._calculateWithinBounds(GLOBALS.drawer._canvas.width, radius),
             y: this._calculateWithinBounds(GLOBALS.drawer._canvas.height, radius),
@@ -102,10 +103,10 @@ const FUNCTIONS = Object.freeze({
      * Returns an integer denoting the "width" of an array,
      * which I define as the index of the last truthy value
      * minus the index of the first truthy value plus one.
-     * 
+     *
      * A negative width indicates that no truthy values were found.
-     * 
-     * @param {object[][]} array the array of whose "width" to calculate
+     *
+     * @param {!object[][]} array the array of whose "width" to calculate
      * @return the "width", as defined above, of array
      */
     getArrayWidth(array) {
@@ -120,16 +121,21 @@ const FUNCTIONS = Object.freeze({
                     lastElementIndex = i;
                 }// if
             });
-            // if (firstElementIndex < 0 && elem) {
-            //     firstElementIndex = i;
-            //     lastElementIndex = i;
-            // } else if (elem) {
-            //     lastElementIndex = i;
-            // }// if
         });
-        // console.log(lastElementIndex, firstElementIndex);
-        return lastElementIndex - firstElementIndex + 1;
+        return [lastElementIndex - firstElementIndex + 1, firstElementIndex];
     }, // getArrayWidth
+
+    /**
+     * Trims columns that contain no truthy values.
+     * @param {!object[]][]} array
+     */
+    trimExcess(array) {
+        const [width, first] = this.getArrayWidth(array);
+        array.forEach((row) => {
+            row.splice(0, first); // the first truthy index is also the number of elements before that index
+            row.splice(width, row.length); // the width indicates the distance from the first truthy index to the last
+        });
+    }, // trimExcess
 
     /**
      * Handles all necessary operations when resizing the window.
@@ -177,19 +183,22 @@ const FUNCTIONS = Object.freeze({
      */
     drawCharacter(key) {
         const charArray = GLOBALS.characterMapper.getArrayFor(key);
+        this.trimExcess(charArray);
+
         let totalCirclesAdded = 0;
         for (let r = 0; r < charArray.length; r++) {
             const row = charArray[r];
             for (let c = 0; c < row.length; c++) {
                 // the individual elements are truthy if a pixel is present
                 if (row[c]) {
-                    const circle = this._createCircle();
-                    circle._radius = 5;
+                    const circle = this._createCircle(CHAR_CIRCLE_RADIUS);
 
+                    // TODO: calculate offset caused by padding in
                     // Calculate coordinates
                     // const xCoordinate = (GLOBALS.canvasCenterX / 2) + (c * OFFSET) + GLOBALS.cursorPosition.x;
-                    const xCoordinate = 0 + (c * OFFSET) + GLOBALS.cursorPosition.x; // TODO: calculate offset caused by canvas center
-                    const yCoordinate = (GLOBALS.canvasCenterY / 2) + (r * OFFSET) + GLOBALS.cursorPosition.y;
+                    const xCoordinate = (c * OFFSET) + GLOBALS.cursorPosition.x;
+                    // const yCoordinate = (GLOBALS.canvasCenterY / 2) + (r * OFFSET) + GLOBALS.cursorPosition.y;
+                    const yCoordinate = (r * OFFSET) + GLOBALS.cursorPosition.y;
 
                     // Tell the circle where it needs to go
                     circle.setDestination({ x: xCoordinate, y: yCoordinate });
@@ -202,9 +211,9 @@ const FUNCTIONS = Object.freeze({
 
         // Now that the character has been drawn, add offset to give the illusion of typing.
         // Each circle is represented with a circle of radius X.
-        GLOBALS.cursorPosition.x += charArray[0].length * 6;
+        GLOBALS.cursorPosition.x += charArray[0].length * CHAR_CIRCLE_RADIUS * KERNING_SCALAR;
         if (Math.abs(window.innerWidth - GLOBALS.cursorPosition.x) <= 500) {
-            GLOBALS.cursorPosition.y += charArray.length * 8;
+            GLOBALS.cursorPosition.y += charArray[0].length * 10;
             GLOBALS.cursorPosition.x = 0;
         } // if
         return totalCirclesAdded;
@@ -226,7 +235,7 @@ window.addEventListener('changedbehavior', (event) => {
 });
 
 // TODO: magic numbers galore
-const removeCount = []; // TODO: refers to most recent one
+const removeCount = [];
 GLOBALS.inputField.addEventListener('keydown', ({ key }) => {
     switch (key) {
     case 'Backspace':
@@ -240,8 +249,10 @@ GLOBALS.inputField.addEventListener('keydown', ({ key }) => {
         Object.assign(GLOBALS.cursorPosition, { x: GLOBALS.cursorPosition.x - 35 * 6 });
         break;
     case 'Enter':
-        GLOBALS.cursorPosition.y += 34 * 12;
+        GLOBALS.cursorPosition.y += 34 * 7;
         GLOBALS.cursorPosition.x = 0;
+    case ' ':
+        GLOBALS.cursorPosition.x += 150;
     default:
         removeCount.push(FUNCTIONS.drawCharacter.call(FUNCTIONS, key));
     } // switch

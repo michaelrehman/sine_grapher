@@ -15,12 +15,15 @@ export class Drawer {
     /**
      * Handles all necessary operations when the window is resized.
      * This includes resizing the canvas and finding the canvas center.
-     * @returns {object} an object containing the canvas center's coordinates
+     *
+     * @param {number} [width=window.innerWidth]  the width of the canvas
+     * @param {number} [width=window.innerHeight] the height of the canvas
+     * @return {object} an object containing the canvas center's coordinates
      */
-    init() {
+    init(width=window.innerWidth, height=window.innerHeight) {
         // canvas width
-        this._canvas.width = window.innerWidth;
-        this._canvas.height = window.innerHeight;
+        this._canvas.width = width;
+        this._canvas.height = height;
         // canvas center
         const canvasCenterX = this._canvas.width / 2;
         const canvasCenterY = this._canvas.height / 2;
