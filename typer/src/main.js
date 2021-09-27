@@ -100,44 +100,6 @@ const FUNCTIONS = Object.freeze({
     }, // _getBoundedArcMethod
 
     /**
-     * Returns an integer denoting the "width" of an array,
-     * which I define as the index of the last truthy value
-     * minus the index of the first truthy value plus one.
-     *
-     * A negative width indicates that no truthy values were found.
-     *
-     * @param {!object[][]} array the array of whose "width" to calculate
-     * @return the "width", as defined above, of array
-     */
-    getArrayWidth(array) {
-        let firstElementIndex = -1;
-        let lastElementIndex = -1;
-        array.forEach((row) => {
-            row.forEach((elem, i) => {
-                if (elem && (firstElementIndex < 0 || i < firstElementIndex)) {
-                    firstElementIndex = i;
-                    lastElementIndex = i;
-                } else if (elem && i > lastElementIndex) {
-                    lastElementIndex = i;
-                }// if
-            });
-        });
-        return [lastElementIndex - firstElementIndex + 1, firstElementIndex];
-    }, // getArrayWidth
-
-    /**
-     * Trims columns that contain no truthy values.
-     * @param {!object[]][]} array
-     */
-    trimExcess(array) {
-        const [width, first] = this.getArrayWidth(array);
-        array.forEach((row) => {
-            row.splice(0, first); // the first truthy index is also the number of elements before that index
-            row.splice(width, row.length); // the width indicates the distance from the first truthy index to the last
-        });
-    }, // trimExcess
-
-    /**
      * Handles all necessary operations when resizing the window.
      */
     init() {
@@ -183,7 +145,7 @@ const FUNCTIONS = Object.freeze({
      */
     drawCharacter(key) {
         const charArray = GLOBALS.characterMapper.getArrayFor(key);
-        this.trimExcess(charArray);
+        console.log(charArray);
 
         let totalCirclesAdded = 0;
         for (let r = 0; r < charArray.length; r++) {

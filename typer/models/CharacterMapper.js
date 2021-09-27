@@ -1,4 +1,4 @@
-import { FONT_SIZE } from '../src/constants.js';
+import { FONT_SIZE, ALL_CHARS } from '../src/constants.js';
 
 /**
  * Class used to map characters to arrays.
@@ -27,7 +27,16 @@ export class CharacterMapper {
         this._context.fillStyle = '#ffffff';
         this._context.textAlign = 'center';
         this._context.textBaseline = 'middle';
+
+        // Precalculate common characters [a-zA-Z]
+        this.getArrayForAll();
     } // constructor
+
+    getArrayForAll() {
+        for (let i = 0; i < ALL_CHARS.length; i++) {
+            this.getArrayFor(ALL_CHARS.charAt(i));
+        } // for
+    } // getArrayForAll
 
     /**
      * Returns an array representing the character passed in.
@@ -55,6 +64,7 @@ export class CharacterMapper {
         const _2dVersion = this._convertTo2DArray(imageDataArray);
         // add it to a cache avoid recalculating it
         this._alreadyCalculated[character] = _2dVersion;
+        console.log(this._alreadyCalculated);
 
         // clear canvas for next character
         this._context.clearRect(...this._canvasCorners);
@@ -63,7 +73,7 @@ export class CharacterMapper {
     } // getArrayFor
 
     /**
-     * Returns the 2D version of an image data array.
+     * Returns the trimmed 2D version of an image data array.
      * @private
      * @param {Uint8ClampedArray} imageArray an image data array to convert
      * @return the 2D version of an image data array
@@ -99,8 +109,47 @@ export class CharacterMapper {
             } // if
         } // for
 
+        this._trimExcess(_2dVersion); // don't want to cahce empty columns
         return _2dVersion;
     } // _convertTo2DArray
+
+    /**
+     * Returns an integer denoting the "width" of an array,
+     * which I define as the index of the last truthy value
+     * minus the index of the first truthy value plus one.
+     *
+     * A negative width indicates that no truthy values were found.
+     *
+     * @param {!object[][]} array the array of whose "width" to calculate
+     * @return the "width", as defined above, of array
+     */
+     _getArrayWidth(array) {
+        let firstElementIndex = -1;
+        let lastElementIndex = -1;
+        array.forEach((row) => {
+            row.forEach((elem, i) => {
+                if (elem && (firstElementIndex < 0 || i < firstElementIndex)) {
+                    firstElementIndex = i;
+                    lastElementIndex = i;
+                } else if (elem && i > lastElementIndex) {
+                    lastElementIndex = i;
+                }// if
+            });
+        });
+        return [lastElementIndex - firstElementIndex + 1, firstElementIndex];
+    } // getArrayWidth
+
+    /**
+     * Trims columns that contain no truthy values.
+     * @param {!object[]][]} array
+     */
+    _trimExcess(array) {
+        const [width, first] = this._getArrayWidth(array);
+        array.forEach((row) => {
+            row.splice(0, first); // the first truthy index is also the number of elements before that index
+            row.splice(width, row.length); // the width indicates the distance from the first truthy index to the last
+        });
+    } // trimExcess
 
 } // CharacterMapper
 

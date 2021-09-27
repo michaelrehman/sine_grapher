@@ -30,7 +30,7 @@ export const RADIUS_BOUNDS = Object.freeze({ min: 1, max: 3 });
  * @constant {!Object.<string, number>}
  * @readonly
  */
-export const TRAVEL_FACTOR = Object.freeze({ x: 15, y: 30 });
+export const TRAVEL_FACTOR = Object.freeze({ x: 15, y: 12 });
 
 /**
  * A constant object representing the min
@@ -90,3 +90,5 @@ export const CHAR_CIRCLE_RADIUS = 5;
  * @constant {!number}
  */
 export const KERNING_SCALAR = 2.2;
+
+export const ALL_CHARS = 'abcdefghijklmnopqrstuvqxyzABCDEFGHIJKLMNOPQURSTUVWXYZ';
